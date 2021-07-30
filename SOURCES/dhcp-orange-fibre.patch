@@ -1,0 +1,25 @@
+diff --color -ru dhcp-4.3.6.old-patch/common/lpf.c dhcp-4.3.6.patch/common/lpf.c
+--- dhcp-4.3.6.old-patch/common/lpf.c	2021-07-29 19:39:46.408565392 +0200
++++ dhcp-4.3.6.patch/common/lpf.c	2021-07-29 21:49:36.240432985 +0200
+@@ -118,6 +118,12 @@
+ 		log_fatal ("Open a socket for LPF: %m");
+ 	}
+ 
++       	/* ZOC: Set SO_PRIORITY (skb->priority in Linux kernel) to 6.
++       	    vlan code will then map this priority to 802.1p priority according
++       	    to egress configuration for the VLAN */
++       	int val = 6;
++       	setsockopt(sock, SOL_SOCKET, SO_PRIORITY, &val, sizeof (val));
++
+ 	memset (&ifr, 0, sizeof ifr);
+ 	strncpy (ifr.ifr_name, (const char *)info -> ifp, sizeof ifr.ifr_name);
+ 	ifr.ifr_name[IFNAMSIZ-1] = '\0';
+@@ -143,7 +149,7 @@
+ 		log_fatal ("Bind socket to interface: %m");
+ 
+ 	}
+-
++	
+ 	return sock;
+ }
+ #endif /* USE_LPF_SEND || USE_LPF_RECEIVE */
