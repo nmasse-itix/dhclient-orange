@@ -16,8 +16,7 @@
 Summary:  Dynamic host configuration protocol software
 Name:     dhcp
 Version:  4.3.6
-# Release was 45
-Release:  itix1%{?dist}
+Release:  45.itix3%{?dist}
 # NEVER CHANGE THE EPOCH on this package.  The previous maintainer (prior to
 # dcantrell maintaining the package) made incorrect use of the epoch and
 # that's why it is at 12 now.  It should have never been used, but it was.
@@ -156,7 +155,7 @@ This package provides the ISC DHCP relay agent.
 %package client-orange-isp
 Summary: Provides the ISC DHCP client daemon and dhclient-script
 Provides: dhclient = %{epoch}:%{version}-%{release}
-Conflicts: dhcp-client
+Provides: dhcp-client
 Obsoletes: dhclient < %{epoch}:%{version}-%{release}
 # dhclient-script requires:
 Requires: coreutils gawk grep ipcalc iproute iputils sed systemd
