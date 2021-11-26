@@ -1,0 +1,149 @@
+diff --git a/client/Makefile.am b/client/Makefile.am
+index b85f5d2..b1ecf82 100644
+--- a/client/Makefile.am
++++ b/client/Makefile.am
+@@ -15,6 +15,6 @@ dhclient_SOURCES = clparse.c dhclient.c dhc6.c \
+ 		   scripts/bsdos scripts/freebsd scripts/linux scripts/macos \
+ 		   scripts/netbsd scripts/nextstep scripts/openbsd \
+ 		   scripts/solaris scripts/openwrt
+-dhclient_LDADD = ../common/libdhcp.a ../omapip/libomapi.a $(BIND_LIBS)
++dhclient_LDADD = ../common/libdhcp.a ../omapip/libomapi.la $(BIND_LIBS)
+ man_MANS = dhclient.8 dhclient-script.8 dhclient.conf.5 dhclient.leases.5
+ EXTRA_DIST = $(man_MANS)
+diff --git a/common/tests/Makefile.am b/common/tests/Makefile.am
+index 196aa44..1ccaa05 100644
+--- a/common/tests/Makefile.am
++++ b/common/tests/Makefile.am
+@@ -15,22 +15,22 @@ ATF_TESTS += alloc_unittest dns_unittest misc_unittest ns_name_unittest
+ alloc_unittest_SOURCES = test_alloc.c $(top_srcdir)/tests/t_api_dhcp.c
+ alloc_unittest_LDADD = $(ATF_LDFLAGS)
+ alloc_unittest_LDADD += ../libdhcp.a  \
+-	../../omapip/libomapi.a $(BIND_LIBS)
++	../../omapip/libomapi.la $(BIND_LIBS)
+ 
+ dns_unittest_SOURCES = dns_unittest.c $(top_srcdir)/tests/t_api_dhcp.c
+ dns_unittest_LDADD = $(ATF_LDFLAGS)
+ dns_unittest_LDADD += ../libdhcp.a  \
+-	../../omapip/libomapi.a $(BIND_LIBS)
++	../../omapip/libomapi.la $(BIND_LIBS)
+ 
+ misc_unittest_SOURCES = misc_unittest.c $(top_srcdir)/tests/t_api_dhcp.c
+ misc_unittest_LDADD = $(ATF_LDFLAGS)
+ misc_unittest_LDADD += ../libdhcp.a  \
+-	../../omapip/libomapi.a $(BIND_LIBS)
++	../../omapip/libomapi.la $(BIND_LIBS)
+ 
+ ns_name_unittest_SOURCES = ns_name_test.c $(top_srcdir)/tests/t_api_dhcp.c
+ ns_name_unittest_LDADD = $(ATF_LDFLAGS)
+ ns_name_unittest_LDADD += ../libdhcp.a  \
+-	../../omapip/libomapi.a $(BIND_LIBS)
++	../../omapip/libomapi.la $(BIND_LIBS)
+ 
+ check: $(ATF_TESTS)
+ 	@if test $(top_srcdir) != ${top_builddir}; then \
+diff --git a/configure.ac b/configure.ac
+index f594cfa..adc98a8 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -47,7 +47,8 @@ AM_CONDITIONAL(CROSS_COMPILING, test "$cross_compiling" = "yes")
+ # Use this to define _GNU_SOURCE to pull in the IPv6 Advanced Socket API.
+ AC_USE_SYSTEM_EXTENSIONS
+ 
+-AC_PROG_RANLIB
++# Use libtool to simplify building of shared libraries
++AC_PROG_LIBTOOL
+ 
+ AC_PATH_PROG(AR, ar)
+ AC_SUBST(AR)
+diff --git a/dhcpctl/Makefile.am b/dhcpctl/Makefile.am
+index fa20a78..dd016e4 100644
+--- a/dhcpctl/Makefile.am
++++ b/dhcpctl/Makefile.am
+@@ -1,17 +1,17 @@
+ BIND_LIBS = @BIND_LIBS@
+ 
+ bin_PROGRAMS = omshell
+-lib_LIBRARIES = libdhcpctl.a
++lib_LTLIBRARIES = libdhcpctl.la
+ noinst_PROGRAMS = cltest
+ man_MANS = omshell.1 dhcpctl.3
+ EXTRA_DIST = $(man_MANS)
+ 
+ omshell_SOURCES = omshell.c
+-omshell_LDADD = libdhcpctl.a ../common/libdhcp.a ../omapip/libomapi.a \
++omshell_LDADD = libdhcpctl.la ../common/libdhcp.a ../omapip/libomapi.la \
+ 	        $(BIND_LIBS)
+ 
+-libdhcpctl_a_SOURCES = dhcpctl.c callback.c remote.c
++libdhcpctl_la_SOURCES = dhcpctl.c callback.c remote.c
+ 
+ cltest_SOURCES = cltest.c
+-cltest_LDADD = libdhcpctl.a ../common/libdhcp.a ../omapip/libomapi.a \
++cltest_LDADD = libdhcpctl.la ../common/libdhcp.a ../omapip/libomapi.la \
+ 	       $(BIND_LIBS)
+diff --git a/omapip/Makefile.am b/omapip/Makefile.am
+index b0d2680..265bcef 100644
+--- a/omapip/Makefile.am
++++ b/omapip/Makefile.am
+@@ -1,9 +1,9 @@
+ BIND_LIBS = @BIND_LIBS@
+ 
+-lib_LIBRARIES = libomapi.a
++lib_LTLIBRARIES = libomapi.la
+ noinst_PROGRAMS = svtest
+ 
+-libomapi_a_SOURCES = protocol.c buffer.c alloc.c result.c connection.c \
++libomapi_la_SOURCES = protocol.c buffer.c alloc.c result.c connection.c \
+ 		     errwarn.c listener.c dispatch.c generic.c support.c \
+ 		     handle.c message.c convert.c hash.c auth.c inet_addr.c \
+ 		     array.c trace.c toisc.c iscprint.c isclib.c
+@@ -12,5 +12,5 @@ man_MANS = omapi.3
+ EXTRA_DIST = $(man_MANS)
+ 
+ svtest_SOURCES = test.c
+-svtest_LDADD = libomapi.a $(BIND_LIBS)
++svtest_LDADD = libomapi.la $(BIND_LIBS)
+ 
+diff --git a/relay/Makefile.am b/relay/Makefile.am
+index c9a1cba..316a524 100644
+--- a/relay/Makefile.am
++++ b/relay/Makefile.am
+@@ -4,7 +4,7 @@ AM_CPPFLAGS = -DLOCALSTATEDIR='"@localstatedir@"'
+ 
+ sbin_PROGRAMS = dhcrelay
+ dhcrelay_SOURCES = dhcrelay.c
+-dhcrelay_LDADD = ../common/libdhcp.a ../omapip/libomapi.a \
++dhcrelay_LDADD = ../common/libdhcp.a ../omapip/libomapi.la \
+ 		 $(BIND_LIBS)
+ man_MANS = dhcrelay.8
+ EXTRA_DIST = $(man_MANS)
+diff --git a/server/Makefile.am b/server/Makefile.am
+index 30cf2b1..f56f310 100644
+--- a/server/Makefile.am
++++ b/server/Makefile.am
+@@ -15,8 +15,8 @@ dhcpd_SOURCES = dhcpd.c dhcp.c bootp.c confpars.c db.c class.c failover.c \
+ 		dhcpv6.c mdb6.c ldap.c ldap_casa.c leasechain.c ldap_krb_helper.c
+ 
+ dhcpd_CFLAGS = $(LDAP_CFLAGS)
+-dhcpd_LDADD = ../common/libdhcp.a ../omapip/libomapi.a \
+-	      ../dhcpctl/libdhcpctl.a $(BIND_LIBS) $(LDAP_LIBS)
++dhcpd_LDADD = ../common/libdhcp.a ../omapip/libomapi.la \
++	      ../dhcpctl/libdhcpctl.la $(BIND_LIBS) $(LDAP_LIBS)
+ 
+ man_MANS = dhcpd.8 dhcpd.conf.5 dhcpd.leases.5
+ EXTRA_DIST = $(man_MANS)
+diff --git a/server/tests/Makefile.am b/server/tests/Makefile.am
+index 771de06..8d8a2c1 100644
+--- a/server/tests/Makefile.am
++++ b/server/tests/Makefile.am
+@@ -20,8 +20,8 @@ DHCPSRC = ../dhcp.c ../bootp.c ../confpars.c ../db.c ../class.c      \
+           ../ddns.c ../dhcpleasequery.c ../dhcpv6.c ../mdb6.c        \
+           ../ldap.c ../ldap_casa.c ../dhcpd.c ../leasechain.c
+ 
+-DHCPLIBS = $(top_builddir)/common/libdhcp.a $(top_builddir)/omapip/libomapi.a \
+-          $(top_builddir)/dhcpctl/libdhcpctl.a $(BIND_LIBS)
++DHCPLIBS = $(top_builddir)/common/libdhcp.a $(top_builddir)/omapip/libomapi.la \
++          $(top_builddir)/dhcpctl/libdhcpctl.la $(BIND_LIBS)
+ 
+ ATF_TESTS =
+ if HAVE_ATF

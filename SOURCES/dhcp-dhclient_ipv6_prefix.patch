@@ -1,0 +1,94 @@
+diff --git a/client/dhc6.c b/client/dhc6.c
+index 5460ee1..fe0057c 100644
+--- a/client/dhc6.c
++++ b/client/dhc6.c
+@@ -148,6 +148,7 @@ static int dhc6_score_lease(struct client_state *client,
+ 
+ extern int onetry;
+ extern int stateless;
++extern int address_prefix_len;
+ 
+ /*
+  * Assign DHCPv6 port numbers as a client.
+@@ -4364,7 +4365,7 @@ dhc6_marshall_values(const char *prefix, struct client_state *client,
+ 				      (unsigned) addr->plen);
+ 		} else {
+ 			client_envadd(client, prefix, "ip6_prefixlen",
+-				      "%d", DHCLIENT_DEFAULT_PREFIX_LEN);
++				      "%d", address_prefix_len);
+ 			client_envadd(client, prefix, "ip6_address",
+ 				      "%s", piaddr(addr->address));
+ 		}
+diff --git a/client/dhclient.c b/client/dhclient.c
+index b61da43..05bfc7e 100644
+--- a/client/dhclient.c
++++ b/client/dhclient.c
+@@ -114,6 +114,7 @@ char *progname = NULL;
+ 
+ int bootp_broadcast_always = 0;
+ 
++int address_prefix_len = DHCLIENT_DEFAULT_PREFIX_LEN;
+ extern struct option *default_requested_options[];
+ 
+ void run_stateless(int exit_mode, u_int16_t port);
+@@ -192,6 +193,7 @@ usage(const char *sfmt, const char *sarg)
+ #endif
+ #else /* DHCPv6 */
+ 		  "[-I1dvrxi] [-nw] [-p <port>] [-D LL|LLT] \n"
++                   "                [--address-prefix-len length]\n"
+ #endif /* DHCPv6 */
+ 		  "                [-s server-addr] [-cf config-file]\n"
+ 		  "                [-df duid-file] [-lf lease-file]\n"
+@@ -392,6 +394,17 @@ main(int argc, char **argv) {
+ 			tmp->next = client_env;
+ 			client_env = tmp;
+ 			client_env_count++;
++		} else if (!strcmp(argv[i], "--address-prefix-len")) {
++			if (++i == argc) {
++				usage(use_noarg, argv[i-1]);
++			}
++			errno = 0;
++			address_prefix_len = (int)strtol(argv[i], &s, 10);
++			if (errno || (*s != '\0') ||
++			    (address_prefix_len < 0)) {
++ 		                usage("Invalid value for"       
++				      " --address-prefix-len: %s", argv[i]);
++                       }
+ #ifdef DHCPv6
+ 		} else if (!strcmp(argv[i], "-S")) {
+ 			if (local_family_set && (local_family == AF_INET)) {
+diff --git a/includes/site.h b/includes/site.h
+index b2f7fd7..aad9711 100644
+--- a/includes/site.h
++++ b/includes/site.h
+@@ -286,7 +286,7 @@
+    is a host address and doesn't include any on-link information.
+    64 indicates that the first 64 bits are the subnet or on-link
+    prefix. */
+-#define DHCLIENT_DEFAULT_PREFIX_LEN 64
++#define DHCLIENT_DEFAULT_PREFIX_LEN 128
+ 
+ /* Enable the gentle shutdown signal handling.  Currently this
+    means that on SIGINT or SIGTERM a client will release its
+diff --git a/client/dhclient.c b/client/dhclient.c
+index 2f29591..6c8b145 100644
+diff --git a/client/dhclient.c b/client/dhclient.c
+index b0bf2bf..f7b1476 100644
+--- a/client/dhclient.c
++++ b/client/dhclient.c
+@@ -193,7 +193,6 @@ usage(const char *sfmt, const char *sarg)
+ #endif
+ #else /* DHCPv6 */
+ 		  "[-I1dvrxi] [-nw] [-p <port>] [-D LL|LLT] \n"
+-                   "                [--address-prefix-len length]\n"
+ #endif /* DHCPv6 */
+ 		  "                [-s server-addr] [-cf config-file]\n"
+ 		  "                [-df duid-file] [-lf lease-file]\n"
+@@ -202,6 +201,7 @@ usage(const char *sfmt, const char *sarg)
+ 		  "                [-C <dhcp-client-identifier>] [-B]\n"
+ 		  "                [-H <host-name> | -F <fqdn.fqdn>] [--timeout <timeout>]\n"
+ 		  "                [-V <vendor-class-identifier>]\n"
++		  "                [--address-prefix-len length]\n"
+ 		  "                [--request-options <request option list>]",
+ 		  isc_file_basename(progname));
+ }

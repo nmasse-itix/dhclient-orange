@@ -1,0 +1,34 @@
+diff -up dhcp-4.3.1b1/client/dhclient.8.KrJcIv dhcp-4.3.1b1/client/dhclient.8
+--- dhcp-4.3.1b1/client/dhclient.8.KrJcIv	2014-07-10 17:39:25.852763873 +0200
++++ dhcp-4.3.1b1/client/dhclient.8	2014-07-10 17:54:26.841012988 +0200
+@@ -458,6 +458,9 @@ used to construct a RFC4361 style client
+ in the client's messages.  This client id can be overridden by
+ setting a client id in the configuration file.  Overridding the
+ client id in this fashion is discouraged.
++This option is turned on by default, if you want to redefine or turn off
++sending of client id, use send dhcp-client-identifier = "better identifier"
++or send dhcp-client-identifier = "" in /etc/dhcp/dhclient.conf.
+ .TP
+ .BI \-I
+ Use the standard DDNS scheme from RFCs 4701 & 4702.  
+diff -up dhcp-4.3.1b1/client/dhclient.c.KrJcIv dhcp-4.3.1b1/client/dhclient.c
+--- dhcp-4.3.1b1/client/dhclient.c.KrJcIv	2014-07-10 17:54:26.829013157 +0200
++++ dhcp-4.3.1b1/client/dhclient.c	2014-07-10 17:55:50.155835918 +0200
+@@ -73,7 +73,7 @@ struct sockaddr_in sockaddr_broadcast;
+ struct in_addr giaddr;
+ struct data_string default_duid;
+ int duid_type = 0;
+-int duid_v4 = 0;
++int duid_v4 = 1;
+ int std_dhcid = 0;
+ 
+ /* ASSERT_STATE() does nothing now; it used to be
+@@ -1301,7 +1301,7 @@ static void setup_ib_interface(struct in
+ 	}
+ 
+ 	/* No client ID specified */
+-	log_fatal("dhcp-client-identifier must be specified for InfiniBand");
++	//log_fatal("dhcp-client-identifier must be specified for InfiniBand");
+ }
+ 
+ /* Individual States:

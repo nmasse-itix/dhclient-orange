@@ -1,0 +1,79 @@
+diff -up dhcp-4.3.4/configure.ac.sd_notify dhcp-4.3.4/configure.ac
+--- dhcp-4.3.4/configure.ac.sd_notify	2016-04-29 13:08:52.813287060 +0200
++++ dhcp-4.3.4/configure.ac	2016-04-29 13:08:52.872287075 +0200
+@@ -832,6 +832,17 @@ if test x$ldap = xyes || test x$ldapcryp
+     AC_SUBST(LDAP_CFLAGS, [$LDAP_CFLAGS])
+ fi
+ 
++AC_ARG_WITH(systemd,
++        AC_HELP_STRING([--with-systemd],
++                       [enable sending status notifications to systemd daemon (default is no)]),
++        [systemd=$withval],
++        [systemd=no])
++
++if test x$systemd = xyes ; then
++   AC_CHECK_LIB(systemd, sd_notifyf, ,
++                AC_MSG_FAILURE([*** systemd library not present - do you need to install systemd-libs package?]))
++fi
++
+ # Append selected warning levels to CFLAGS before substitution (but after
+ # AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[]) & etc).
+ CFLAGS="$CFLAGS $STD_CWARNINGS"
+diff -up dhcp-4.3.4/relay/dhcrelay.c.sd_notify dhcp-4.3.4/relay/dhcrelay.c
+--- dhcp-4.3.4/relay/dhcrelay.c.sd_notify	2016-04-29 13:08:52.814287061 +0200
++++ dhcp-4.3.4/relay/dhcrelay.c	2016-04-29 13:08:52.872287075 +0200
+@@ -37,6 +37,10 @@
+    int keep_capabilities = 0;
+ #endif
+ 
++#ifdef HAVE_LIBSYSTEMD
++#include <systemd/sd-daemon.h>
++#endif
++
+ TIME default_lease_time = 43200; /* 12 hours... */
+ TIME max_lease_time = 86400; /* 24 hours... */
+ struct tree_cache *global_options[256];
+@@ -709,6 +713,14 @@ main(int argc, char **argv) {
+ 	}
+ #endif
+ 
++#ifdef HAVE_LIBSYSTEMD
++        /* We are ready to process incomming packets. Let's notify systemd */
++        sd_notifyf(0, "READY=1\n"
++                   "STATUS=Dispatching packets...\n"
++                   "MAINPID=%lu",
++                   (unsigned long) getpid());
++#endif
++
+ 	/* Start dispatching packets and timeouts... */
+ 	dispatch();
+ 
+diff -up dhcp-4.3.4/server/dhcpd.c.sd_notify dhcp-4.3.4/server/dhcpd.c
+--- dhcp-4.3.4/server/dhcpd.c.sd_notify	2016-04-29 13:08:52.873287075 +0200
++++ dhcp-4.3.4/server/dhcpd.c	2016-04-29 13:12:00.655333096 +0200
+@@ -57,6 +57,10 @@ uid_t set_uid = 0;
+ gid_t set_gid = 0;
+ #endif /* PARANOIA */
+ 
++#ifdef HAVE_LIBSYSTEMD
++#include <systemd/sd-daemon.h>
++#endif
++
+ struct iaddr server_identifier;
+ int server_identifier_matched;
+ 
+@@ -931,6 +935,14 @@ main(int argc, char **argv) {
+ 	/* Log that we are about to start working */
+ 	log_info("Server starting service.");
+ 
++#ifdef HAVE_LIBSYSTEMD
++        /* We are ready to process incomming packets. Let's notify systemd */
++        sd_notifyf(0, "READY=1\n"
++                   "STATUS=Dispatching packets...\n"
++                   "MAINPID=%lu",
++                   (unsigned long) getpid());
++#endif
++
+ 	/*
+ 	 * Receive packets and dispatch them...
+ 	 * dispatch() will never return.

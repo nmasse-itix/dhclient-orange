@@ -1,0 +1,31 @@
+diff -up dhcp-4.2.5/client/dhclient.c.orig dhcp-4.2.5/client/dhclient.c
+--- dhcp-4.2.5/client/dhclient.c.orig	2018-11-07 14:21:16.756152614 +0100
++++ dhcp-4.2.5/client/dhclient.c	2018-11-08 17:30:15.754440523 +0100
+@@ -1618,8 +1618,14 @@ void dhcpack (packet)
+ 	} else
+ 			client -> new -> renewal = 0;
+ 
+-	/* If it wasn't specified by the server, calculate it. */
+-	if (!client -> new -> renewal)
++	/* 
++	 * If it wasn't specified by the server, calculate it. Also use expiry
++	 * instead of renewal time when it is shorter. This better follows 
++	 * RFC 2131 (section 4.4.5) when dealing with some DHCP servers.
++	 */
++	
++	if (!client -> new -> renewal ||
++	    client -> new -> renewal > client -> new -> expiry)
+ 		client -> new -> renewal = client -> new -> expiry / 2 + 1;
+ 
+ 	if (client -> new -> renewal <= 0)
+@@ -1645,7 +1651,9 @@ void dhcpack (packet)
+ 	} else
+ 			client -> new -> rebind = 0;
+ 
+-	if (client -> new -> rebind <= 0) {
++	/* Rebinding time must not be longer than expiry. */
++	if (client -> new -> rebind <= 0 ||
++	    client -> new -> rebind > client -> new -> expiry) {
+ 		if (client -> new -> expiry <= TIME_MAX / 7)
+ 			client -> new -> rebind =
+ 					client -> new -> expiry * 7 / 8;

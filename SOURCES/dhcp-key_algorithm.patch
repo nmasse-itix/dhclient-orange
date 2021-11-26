@@ -1,0 +1,200 @@
+From e6ffc27f24321017a5ad9af3707f4e2e54bbac74 Mon Sep 17 00:00:00 2001
+From: Thomas Markwalder <tmark@isc.org>
+Date: Mon, 11 Dec 2017 07:19:43 -0500
+Subject: [PATCH] [master] Adds key-algorithm statement to omshell
+
+    Merges in rt46771.
+---
+ RELNOTES            |  7 +++++++
+ common/conflex.c    |  2 ++
+ dhcpctl/omshell.1   | 32 ++++++++++++++++++++++++--------
+ dhcpctl/omshell.c   | 38 +++++++++++++++++++++++++++++++++++---
+ includes/dhctoken.h |  3 ++-
+ 5 files changed, 70 insertions(+), 12 deletions(-)
+
+diff --git a/common/conflex.c b/common/conflex.c
+index 8ce024af..045b655d 100644
+--- a/common/conflex.c
++++ b/common/conflex.c
+@@ -1104,6 +1104,8 @@ intern(char *atom, enum dhcp_token dfv) {
+ 		}
+ 		if (!strcasecmp (atom + 1, "ey"))
+ 			return KEY;
++		if (!strcasecmp (atom + 1, "ey-algorithm"))
++			return KEY_ALGORITHM;
+ 		break;
+ 	      case 'l':
+ 		if (!strcasecmp (atom + 1, "case"))
+diff --git a/dhcpctl/omshell.1 b/dhcpctl/omshell.1
+index 4846272a..2f55e965 100644
+--- a/dhcpctl/omshell.1
++++ b/dhcpctl/omshell.1
+@@ -1,7 +1,6 @@
+ .\"	$Id: omshell.1,v 1.6 2009/11/24 02:06:56 sar Exp $
+ .\"
+-.\" Copyright (c) 2012,2014 by Internet Systems Consortium, Inc. ("ISC")
+-.\" Copyright (c) 2004,2009 by Internet Systems Consortium, Inc. ("ISC")
++.\" Copyright (c) 2004-2017 by Internet Systems Consortium, Inc. ("ISC")
+ .\" Copyright (c) 2001-2003 by Internet Software Consortium
+ .\"
+ .\" Permission to use, copy, modify, and distribute this software for any
+@@ -81,7 +80,24 @@ where number is the port that OMAPI listens on.  By default, this is 7911.
+ This specifies the TSIG key to use to authenticate the OMAPI transactions.
+ \fIname\fR is the name of a key defined in \fIdhcpd.conf\fR with the
+ \fBomapi-key\fR statement.  The \fIsecret\fR is the secret key generated from
+-\fBdnssec-keygen\fR or another key generation program.
++\fBdnssec-keygen\fR or another key generation program.  The key algorithm is
++assumed to be HMAC-MD5 key. If a different algorithm was specified in dhcpd.conf
++file for the key, then it must be specified via the \fIkey-algorithm\fR statement.
++.RE
++.PP
++.B key-algorithm \fIalgorithm\fR
++.RS 0.5i
++This specifies the cryptographic algorithm for the key used when authenticating OMAPI
++transactions. Supported values for \fIalgorithm\fR are:
++.nf
++        HMAC-MD5
++        HMAC-SHA1
++        HMAC-SHA224
++        HMAC-SHA256
++        HMAC-SHA384
++        HMAC-SHA512
++fi
++The default is HMAC-MD5. (Value is not case sensitive).
+ .RE
+ .PP
+ .B connect
+@@ -253,7 +269,7 @@ name = "some-host"
+ hardware-address = 00:80:c7:84:b1:94
+ hardware-type = 00:00:00:01
+ ip-address = c0:a8:04:28
+-> 
++>
+ .fi
+ .PP
+ Your dhcpd.leases file would then have an entry like this in it:
+@@ -267,7 +283,7 @@ host some-host {
+ .fi
+ .PP
+ The \fIdynamic;\fR line is to denote that this host entry did not come from
+-dhcpd.conf, but was created dynamically via OMAPI.  
++dhcpd.conf, but was created dynamically via OMAPI.
+ .SH RESETTING ATTRIBUTES
+ .PP
+ If you want to remove an attribute from an object, you can do this with the
+@@ -288,7 +304,7 @@ name = "some-host"
+ hardware-address = 00:80:c7:84:b1:94
+ hardware-type = 00:00:00:01
+ ip-address = <null>
+-> 
++>
+ .fi
+ .SH REFRESHING OBJECTS
+ .PP
+@@ -300,7 +316,7 @@ particularly useful for hosts.
+ .PP
+ Any remote object that can be created can also be destroyed.  This is done by
+ creating a new local object, setting attributes, associating the local and
+-remote object using \fBopen\fR, and then using the \fBremove\fR command. 
++remote object using \fBopen\fR, and then using the \fBremove\fR command.
+ If the host "some-host" from before was created in error, this could be
+ corrected as follows:
+ .nf
+@@ -312,7 +328,7 @@ hardware-type = 00:00:00:01
+ ip-address = c0:a8:04:28
+ > remove
+ obj: <null>
+-> 
++>
+ .fi
+ .SH HELP
+ .PP
+diff --git a/dhcpctl/omshell.c b/dhcpctl/omshell.c
+index c42bab1a..9233f50e 100644
+--- a/dhcpctl/omshell.c
++++ b/dhcpctl/omshell.c
+@@ -321,12 +321,42 @@ main(int argc, char **argv) {
+ 		    }
+ 		    break;
+ 
++		  case KEY_ALGORITHM:
++		    /* Algorithm is optional */
++		    token = next_token (&val, (unsigned *)0, cfile);
++		    if (token != NAME || !is_identifier(token)) {
++			printf ("missing or invalid algorithm name\n");
++			printf ("usage: key-algoritm <algorithm name>\n");
++			skip_to_semi (cfile);
++			break;
++		    }
++
++		    s = dmalloc (strlen (val) + 1, MDL);
++		    if (!s) {
++			printf ("no memory for algorithm name.\n");
++			skip_to_semi (cfile);
++			break;
++		    }
++
++		    strcpy (s, val);
++		    algorithm = s;
++
++		    token = next_token (&val, (unsigned *)0, cfile);
++		    if (token != END_OF_FILE && token != EOL) {
++			    printf ("extra information after %s\n", algorithm);
++			    printf ("usage: key-algorithm <algorithm name>\n");
++			    skip_to_semi (cfile);
++			    break;
++		    }
++
++		    break;
++
+ 		  case KEY:
+ 		    token = peek_token(&val, (unsigned *)0, cfile);
+ 		    if (token == STRING) {
+ 			    token = next_token (&val, (unsigned *)0, cfile);
+ 			    if (!is_identifier (token)) {
+-				    printf ("usage: key <name> <value>\n");
++			            printf ("usage: key <name> <value>\n");
+ 				    skip_to_semi (cfile);
+ 				    break;
+ 			    }
+@@ -340,7 +370,7 @@ main(int argc, char **argv) {
+ 		    } else {
+ 			    s = parse_host_name(cfile);
+ 			    if (s == NULL) {
+-				    printf ("usage: key <name> <value>\n");
++			            printf ("usage: key <name> <value>\n");
+ 				    skip_to_semi(cfile);
+ 				    break;
+ 			    }
+@@ -352,12 +382,14 @@ main(int argc, char **argv) {
+ 			    skip_to_semi (cfile);
+ 			    break;
+ 		    }
++
+ 		    token = next_token (&val, (unsigned *)0, cfile);
+ 		    if (token != END_OF_FILE && token != EOL) {
+-			    printf ("usage: key <name> <secret>\n");
++			    printf ("usage: key <name> <value> {algorithm}\n");
+ 			    skip_to_semi (cfile);
+ 			    break;
+ 		    }
++
+ 		    break;
+ 
+ 		  case CONNECT:
+diff --git a/includes/dhctoken.h b/includes/dhctoken.h
+index 6fc4df3..ca24d4c 100644
+--- a/includes/dhctoken.h
++++ b/includes/dhctoken.h
+@@ -374,8 +374,9 @@ enum dhcp_token {
+ 	LEASE_ID_FORMAT = 676,
+ 	TOKEN_HEX = 677,
+ 	TOKEN_OCTAL = 678,
+-	BOOTP_BROADCAST_ALWAYS = 679,
+-	DESTINATION_DESCRIPTOR = 680
++	KEY_ALGORITHM = 679,
++	BOOTP_BROADCAST_ALWAYS = 680,
++	DESTINATION_DESCRIPTOR = 681
+ };
+ 
+ #define is_identifier(x)	((x) >= FIRST_TOKEN &&	\

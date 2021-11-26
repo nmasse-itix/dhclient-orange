@@ -1,0 +1,85 @@
+From ffb24c0bbd4d6f2b4718a1a8f4f2da237cc6ed66 Mon Sep 17 00:00:00 2001
+From: Thomas Markwalder <tmark@isc.org>
+Date: Fri, 14 Sep 2018 13:41:41 -0400
+Subject: [PATCH] [master] Added includes of new BIND9 compatibility headers,
+ updated util/bind.sh
+
+    Merges in rt48072.
+
+(cherry picked from commit 8194daabfd590f17825f0c61e9534bee5c99cc86)
+---
+ includes/omapip/isclib.h |  3 +++
+ includes/omapip/result.h |  1 +
+ server/dhcpv6.c          | 13 +++++++++----
+ 3 files changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/includes/omapip/isclib.h b/includes/omapip/isclib.h
+index e2963089..fa5d9ad3 100644
+--- a/includes/omapip/isclib.h
++++ b/includes/omapip/isclib.h
+@@ -48,6 +48,9 @@
+ #include <string.h>
+ #include <netdb.h>
+ 
++#include <isc/boolean.h>
++#include <isc/int.h>
++
+ #include <isc/buffer.h>
+ #include <isc/lex.h>
+ #include <isc/lib.h>
+diff --git a/includes/omapip/result.h b/includes/omapip/result.h
+index ae5f7d6a..9c1fab23 100644
+--- a/includes/omapip/result.h
++++ b/includes/omapip/result.h
+@@ -26,6 +26,7 @@
+ #ifndef DHCP_RESULT_H
+ #define DHCP_RESULT_H 1
+ 
++#include <isc/boolean.h>
+ #include <isc/lang.h>
+ #include <isc/resultclass.h>
+ #include <isc/types.h>
+diff --git a/server/dhcpv6.c b/server/dhcpv6.c
+index 74487667..1a6ff241 100644
+--- a/server/dhcpv6.c
++++ b/server/dhcpv6.c
+@@ -1003,7 +1003,8 @@ void check_pool6_threshold(struct reply_state *reply,
+ 				  shared_name,
+ 				  inet_ntop(AF_INET6, &lease->addr,
+ 					    tmp_addr, sizeof(tmp_addr)),
+-				  used, count);
++				  (long long unsigned)(used),
++				  (long long unsigned)(count));
+ 		}
+ 		return;
+ 	}
+@@ -1035,7 +1036,8 @@ void check_pool6_threshold(struct reply_state *reply,
+ 		  "address: %s; high threshold %d%% %llu/%llu.",
+ 		  shared_name,
+ 		  inet_ntop(AF_INET6, &lease->addr, tmp_addr, sizeof(tmp_addr)),
+-		  poolhigh, used, count);
++		  poolhigh, (long long unsigned)(used),
++		  (long long unsigned)(count));
+ 
+ 	/* handle the low threshold now, if we don't
+ 	 * have one we default to 0. */
+@@ -1383,12 +1385,15 @@ pick_v6_address(struct reply_state *reply)
+ 		log_debug("Unable to pick client address: "
+ 			  "no addresses available  - shared network %s: "
+ 			  " 2^64-1 < total, %llu active,  %llu abandoned",
+-			  shared_name, active - abandoned, abandoned);
++			  shared_name, (long long unsigned)(active - abandoned),
++			  (long long unsigned)(abandoned));
+ 	} else {
+ 		log_debug("Unable to pick client address: "
+ 			  "no addresses available  - shared network %s: "
+ 			  "%llu total, %llu active,  %llu abandoned",
+-			  shared_name, total, active - abandoned, abandoned);
++			  shared_name, (long long unsigned)(total),
++			  (long long unsigned)(active - abandoned),
++		          (long long unsigned)(abandoned));
+ 	}
+ 
+ 	return ISC_R_NORESOURCES;
+-- 
+2.14.5

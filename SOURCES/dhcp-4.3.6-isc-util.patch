@@ -1,0 +1,77 @@
+From c37721f799e6b32da156759a830011949311205a Mon Sep 17 00:00:00 2001
+From: Petr Mensik <pemensik@redhat.com>
+Date: Fri, 16 Feb 2018 17:50:40 +0100
+Subject: [PATCH] New bind includes never includes isc/util.h from any public
+ headers. Include them to all compiled files that require it.
+
+---
+ client/dhclient.c   | 1 +
+ common/execute.c    | 1 +
+ common/parse.c      | 1 +
+ common/socket.c     | 1 +
+ omapip/connection.c | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/client/dhclient.c b/client/dhclient.c
+index 228b4fe..014365d 100644
+--- a/client/dhclient.c
++++ b/client/dhclient.c
+@@ -38,6 +38,7 @@
+ #include <sys/wait.h>
+ #include <limits.h>
+ #include <isc/file.h>
++#include <isc/util.h>
+ #include <dns/result.h>
+ 
+ #ifdef HAVE_LIBCAP_NG
+diff --git a/common/execute.c b/common/execute.c
+index fa4e0f8..1ee1e7d 100644
+--- a/common/execute.c
++++ b/common/execute.c
+@@ -28,6 +28,7 @@
+ 
+ #include "dhcpd.h"
+ #include <omapip/omapip_p.h>
++#include <isc/util.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ 
+diff --git a/common/parse.c b/common/parse.c
+index d08cd2c..729d442 100644
+--- a/common/parse.c
++++ b/common/parse.c
+@@ -27,6 +27,7 @@
+  */
+ 
+ #include "dhcpd.h"
++#include <isc/util.h>
+ #include <syslog.h>
+ 
+ /* Enumerations can be specified in option formats, and are used for
+diff --git a/common/socket.c b/common/socket.c
+index 2b352a1..94ce334 100644
+--- a/common/socket.c
++++ b/common/socket.c
+@@ -35,6 +35,7 @@
+  */
+ 
+ #include "dhcpd.h"
++#include <isc/util.h>
+ #include <errno.h>
+ #include <sys/ioctl.h>
+ #include <sys/uio.h>
+diff --git a/omapip/connection.c b/omapip/connection.c
+index 9aac0c8..a74becc 100644
+--- a/omapip/connection.c
++++ b/omapip/connection.c
+@@ -30,6 +30,7 @@
+ #include "dhcpd.h"
+ 
+ #include <omapip/omapip_p.h>
++#include <isc/util.h>
+ #include <arpa/inet.h>
+ #include <arpa/nameser.h>
+ #include <errno.h>
+-- 
+2.14.3
+

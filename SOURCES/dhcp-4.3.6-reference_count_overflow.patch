@@ -1,0 +1,13 @@
+diff --git a/common/options.c b/common/options.c
+index 83e0384..a58c5fc 100644
+--- a/common/options.c
++++ b/common/options.c
+@@ -189,6 +189,8 @@ int parse_option_buffer (options, buffer, length, universe)
+ 
+ 		/* If the length is outrageous, the options are bad. */
+ 		if (offset + len > length) {
++			/* Avoid reference count overflow */
++			option_dereference(&option, MDL);
+ 			reason = "option length exceeds option buffer length";
+ 		      bogus:
+ 			log_error("parse_option_buffer: malformed option "

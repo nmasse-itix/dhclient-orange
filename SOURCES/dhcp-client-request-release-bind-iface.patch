@@ -1,0 +1,61 @@
+diff -up dhcp-4.3.4/client/dhclient.c.bind-iface dhcp-4.3.4/client/dhclient.c
+--- dhcp-4.3.4/client/dhclient.c.bind-iface	2016-04-29 13:06:50.595257108 +0200
++++ dhcp-4.3.4/client/dhclient.c	2016-04-29 13:08:30.237281528 +0200
+@@ -3023,6 +3023,14 @@ void send_request (cpp)
+ #endif
+ 	if (destination.sin_addr.s_addr != INADDR_BROADCAST &&
+ 	    fallback_interface) {
++#if defined(SO_BINDTODEVICE)
++		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
++			       SO_BINDTODEVICE, client->interface->name,
++			       strlen(client->interface->name)) < 0) {
++			log_error("%s:%d: Failed to bind fallback interface"
++				  " to %s: %m", MDL, client->interface->name);
++		}
++#endif
+ 		result = send_packet(fallback_interface, NULL, &client->packet,
+ 				     client->packet_length, from, &destination,
+ 				     NULL);
+@@ -3032,6 +3040,13 @@ void send_request (cpp)
+ 				  client->packet_length,
+ 				  fallback_interface->name);
+ 		}
++#if defined(SO_BINDTODEVICE)
++		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
++			       SO_BINDTODEVICE, NULL, 0) < 0) {
++			log_fatal("%s:%d: Failed to unbind fallback interface:"
++				  " %m", MDL);
++		}
++#endif
+         }
+ 	else {
+ 		/* Send out a packet. */
+@@ -3144,6 +3159,14 @@ void send_release (cpp)
+ 	} else
+ #endif
+ 	if (fallback_interface) {
++#if defined(SO_BINDTODEVICE)
++		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
++			       SO_BINDTODEVICE, client->interface->name,
++			       strlen(client->interface->name)) < 0) {
++			log_error("%s:%d: Failed to bind fallback interface"
++				  " to %s: %m", MDL, client->interface->name);
++		}
++#endif
+ 		result = send_packet(fallback_interface, NULL, &client->packet,
+ 				      client->packet_length, from, &destination,
+ 				      NULL);
+@@ -3153,6 +3176,13 @@ void send_release (cpp)
+ 				  client->packet_length,
+ 				  fallback_interface->name);
+ 		}
++#if defined(SO_BINDTODEVICE)
++		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
++			       SO_BINDTODEVICE, NULL, 0) < 0) {
++			log_fatal("%s:%d: Failed to unbind fallback interface:"
++				  " %m", MDL);
++		}
++#endif
+         } else {
+ 		/* Send out a packet. */
+ 		result = send_packet(client->interface, NULL, &client->packet,

@@ -1,0 +1,13 @@
+diff -up dhcp-4.3.4/client/dhclient.c.stateless-DUID-LLT dhcp-4.3.4/client/dhclient.c
+--- dhcp-4.3.4/client/dhclient.c.stateless-DUID-LLT	2016-04-29 13:13:50.467360008 +0200
++++ dhcp-4.3.4/client/dhclient.c	2016-04-29 13:14:53.389375428 +0200
+@@ -1317,6 +1317,9 @@ void run_stateless(int exit_mode, u_int1
+ 			data_string_forget(&default_duid, MDL);
+ 
+ 		form_duid(&default_duid, MDL);
++		if (form_duid(&default_duid, MDL) == ISC_R_SUCCESS &&
++		    duid_type == DUID_LLT)
++			write_duid(&default_duid);
+ 	}
+ 
+ #ifdef DHCP4o6
