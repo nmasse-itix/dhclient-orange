@@ -3,36 +3,49 @@
 set -Eeuo pipefail
 
 mkdir -p RPMS/x86_64 SRPMS BUILD BUILDROOT
-tmp_dir="$(mktemp -d -t mock-XXXXXXXXXX)"
-trap "rm -rf $tmp_dir" EXIT
 
-# List of available builders: ls -1 /etc/mock
-builder="${BUILDER:-centos-stream-8-x86_64}"
-echo "Using builder image $builder..."
+BUILDER="${BUILDER:-centos-stream-8-x86_64}"
 
-function build_pkgs () {
-  source_rpms=()
-  for pkg; do
-    pkg="$(basename "$pkg")"
-    pkg="${pkg%.spec}"
-    echo "Processing $pkg..."
-    spectool -g -R SPECS/$pkg.spec
-    rpmbuild -bs SPECS/$pkg.spec
-    source_rpm="SRPMS/$(ls -1ct SRPMS | head -n1)"
-    echo "Successfully generated $source_rpm!"
-    source_rpms+=("$source_rpm")
-  done
-  echo "Compiling ${source_rpms[@]}..."
-  #debug_opts="-nN --no-cleanup-after"
-  debug_opts=""
-  mock -r "$builder" --resultdir=$tmp_dir $debug_opts "${source_rpms[@]}"
+function build_pkg () {
+  tmp_dir="$(mktemp -d -t mock-XXXXXXXXXX)"
+  trap "rm -rf $tmp_dir" RETURN
+
+  echo "========================================================="
+  echo " Building $1 on $BUILDER"
+  echo "========================================================="
+  echo
+
+  echo "Downloading sources and building srpm..."
+  spectool -g -R SPECS/$1.spec
+  rpmbuild -bs SPECS/$1.spec
+  source_rpm="SRPMS/$(ls -1ct SRPMS | head -n1)"
+  echo "Successfully generated $source_rpm!"
+  echo
+
+  echo "Compiling..."
+  # To debug, add "-nN"
+  mock -r "$BUILDER" --resultdir="$tmp_dir" ${EXTRA_PARAMS:-} "$source_rpm"
+  echo
+  
+  echo "Cleaning up..."
+  rm -f $tmp_dir/*.src.rpm $tmp_dir/*.log
+  mv $tmp_dir/*.rpm RPMS/x86_64/
+  echo
+}
+
+function build_custom_pkg () {
+  pkg="$(basename "$spec")"
+  pkg="${pkg%.spec}"
+  (test -f "MOCKCONFIG/$pkg.cfg" && . "MOCKCONFIG/$pkg.cfg" ; build_pkg "$pkg")
 }
 
 if [ $# -gt 0 ]; then
-  build_pkgs "$@"
+  for spec; do
+    build_custom_pkg "$spec"
+  done
 else
-  build_pkgs SPECS/*.spec
+  for spec in SPECS/*.spec; do
+    build_custom_pkg "$spec"
+  done
 fi
 
-rm -f $tmp_dir/*.src.rpm $tmp_dir/*.log
-mv $tmp_dir/*.rpm RPMS/x86_64/
