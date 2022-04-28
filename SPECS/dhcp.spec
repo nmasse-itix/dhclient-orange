@@ -16,7 +16,7 @@
 Summary:  Dynamic host configuration protocol software
 Name:     dhcp
 Version:  4.3.6
-Release:  45.itix3%{?dist}
+Release:  47.itix1%{?dist}
 # NEVER CHANGE THE EPOCH on this package.  The previous maintainer (prior to
 # dcantrell maintaining the package) made incorrect use of the epoch and
 # that's why it is at 12 now.  It should have never been used, but it was.
@@ -704,6 +704,12 @@ done
 %endif
 
 %changelog
+* Tue Dec 21 2021 Petr Menšík <pemensik@redhat.com> - 12:4.3.6-47
+- Rebuilt on a new side-tag (#2022715)
+
+* Thu Dec 16 2021 Martin Osvald <mosvald@redhat.com> - 12:4.3.6-46
+- Rebuild with new bind (#2022715)
+
 * Thu May 27 2021 Pavel Zhukov <pzhukov@redhat.com> - 12:4.3.6-45
 - Fix for  CVE-2021-25217
 
