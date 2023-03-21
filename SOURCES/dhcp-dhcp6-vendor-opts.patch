@@ -1,0 +1,12 @@
+diff --git a/common/options.c b/common/options.c
+index 3e6383a..9216ae4 100644
+--- a/common/options.c
++++ b/common/options.c
+@@ -1122,7 +1122,6 @@ store_options6(char *buf, int buflen,
+ 		 */
+ 		if (code == vsio_option_code) {
+ 			vsio_wanted = 1;
+-			continue;
+ 		}
+ 
+ 		/*

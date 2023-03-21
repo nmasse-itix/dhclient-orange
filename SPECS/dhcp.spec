@@ -16,7 +16,7 @@
 Summary:  Dynamic host configuration protocol software
 Name:     dhcp
 Version:  4.3.6
-Release:  47.itix1%{?dist}
+Release:  49.itix1%{?dist}
 # NEVER CHANGE THE EPOCH on this package.  The previous maintainer (prior to
 # dcantrell maintaining the package) made incorrect use of the epoch and
 # that's why it is at 12 now.  It should have never been used, but it was.
@@ -84,7 +84,11 @@ Patch48:  dhcp-bind-9.11.patch
 Patch49:  dhcp-detect-system-time-jumps.patch
 Patch50:  dhcp-key_algorithm.patch
 Patch51:  dhcp-statement_parser.patch
-Patch52:  dhcp-orange-fibre.patch
+Patch52:  dhcp-omshell-hmac-sha512-support.patch
+Patch53:  dhcp-CVE-2022-2928.patch
+Patch54:  dhcp-CVE-2022-2929.patch
+Patch55:  dhcp-dhcp6-vendor-opts.patch
+Patch56:  dhcp-orange-fibre.patch
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -367,9 +371,21 @@ rm bind/bind.tar.gz
 # https://bugzilla.redhat.com/show_bug.cgi?id=1963807
 %patch51 -p1
 
+# https://bugzilla.redhat.com/show_bug.cgi?id=2016248
+%patch52 -p1
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=2132248
+%patch53 -p1
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=2132245
+%patch54 -p1
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=2142024
+%patch55 -p1
+
 # Patch for the Orange Fibre ISP
 # https://lafibre.info/remplacer-livebox/en-cours-remplacer-sa-livebox-par-un-routeur-ubiquiti-edgemax/msg319883/#msg319883
-%patch52 -p1
+%patch56 -p1
 
 # Update paths in all man pages
 for page in client/dhclient.conf.5 client/dhclient.leases.5 \
@@ -704,6 +720,14 @@ done
 %endif
 
 %changelog
+* Tue Oct 11 2022 Martin Osvald <mosvald@redhat.com> - 12:4.3.6-49
+- Fix for CVE-2022-2928
+- Fix for CVE-2022-2929
+- send back dhcp6.vendor-opts again (#2142024)
+
+* Tue May 10 2022 Martin Osvald <mosvald@redhat.com> - 12:4.3.6-48
+- omshell: add support for hmac-sha512 algorithm (#2016248)
+
 * Tue Dec 21 2021 Petr Menšík <pemensik@redhat.com> - 12:4.3.6-47
 - Rebuilt on a new side-tag (#2022715)
 
