@@ -42,8 +42,12 @@ dnf download dhcp --source
 And then, on your development machine:
 
 ```sh
-scp centos-stream-machine:/tmp/dhcp-*.src.rpm SOURCES
-rpm -Uvh SOURCES/dhcp-x.y.z-patch.src.rpm
+mv SOURCES/dhcp-orange-fibre.patch .
+rm -f SOURCES/*
+scp centos-stream-machine:/tmp/dhcp-*.src.rpm SRPMS
+rpm -Uvh SRPMS/dhcp-*.src.rpm
+rm SRPMS/dhcp-*.src.rpm
+mv dhcp-orange-fibre.patch SOURCES/
 ```
 
 Do a git diff to see potential changes against current version.
@@ -55,5 +59,4 @@ Do not forget to:
 
 ```sh
 ./build.sh
-./release.sh
 ```
